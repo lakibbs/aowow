@@ -81,6 +81,7 @@ var tabsRelated = new Tabs({ldelim}parent: ge('tabs-generic'){rdelim});
 {if isset($item.contains)}{include				file='bricks/item_table.tpl'			id='contains'				tabsid='tabsRelated' data=$item.contains			name='contains'			}{/if}
 {if isset($item.pickpocketingloot)}{include		file='bricks/creature_table.tpl'		id='pick-pocketed-from'		tabsid='tabsRelated' data=$item.pickpocketingloot	name='pickpocketedfrom'	}{/if}
 {if isset($item.skinnedfrom)}{include			file='bricks/creature_table.tpl'		id='skinned-from'			tabsid='tabsRelated' data=$item.skinnedfrom			name='skinnedfrom'		}{/if}
+{if isset($item.prospecting)}{include		file='bricks/item_table.tpl'			id='prospecting'		tabsid='tabsRelated' data=$item.prospecting		name='prospecting'	}{/if}
 {if isset($item.prospectingloot)}{include		file='bricks/item_table.tpl'			id='prospected-from'		tabsid='tabsRelated' data=$item.prospectingloot		name='prospectedfrom'	}{/if}
 {if isset($item.canbeplacedin)}{include			file='bricks/item_table.tpl'			id='can-be-placed-in'		tabsid='tabsRelated' data=$item.canbeplacedin		name='canbeplacedin'	}{/if}
 {if isset($item.objectiveof)}{include			file='bricks/quest_table.tpl'			id='objective-of'			tabsid='tabsRelated' data=$item.objectiveof			name='objectiveof'		}{/if}

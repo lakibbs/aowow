@@ -315,6 +315,10 @@ if(!$item = load_cache(5, $cache_key))
 	}
 	unset($drops_sk);
 
+	// Перерабатывается в:
+	if(!($item['prospecting'] = loot('prospecting_loot_template', $item['entry'])))
+		unset($item['prospecting']);
+
 	// Поиск вещей, из которых перерабатывается эта вещь
 	$drops_pr = drop('prospecting_loot_template', $item['entry']);
 	if($drops_pr)
