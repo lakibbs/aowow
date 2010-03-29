@@ -19,7 +19,9 @@ if(!$faction = load_cache(18, $cache_key))
 
 	$row = $DB->selectRow('
 			SELECT
-				f1.factionID, f1.name_loc?d, f1.description1_loc?d, f1.description2_loc?d,
+				f1.factionID, f1.name_loc0 AS name, f1.name_loc?d AS name_loc,
+				f1.description1_loc0 AS description1, f1.description1_loc?d AS description1_loc,
+				f1.description2_loc0 AS description2, f1.description2_loc?d AS description2_loc,
 				f1.team, f1.side, f2.factionID AS category2, f2.name_loc?d AS `group`
 			FROM ?_factions f1
 			LEFT JOIN (?_factions f2) ON f1.team <> 0
@@ -40,11 +42,11 @@ if(!$faction = load_cache(18, $cache_key))
 		// Номер фракции
 		$faction['entry'] = $row['factionID'];
 		// Название фракции
-		$faction['name'] = $row['name_loc'.$_SESSION['locale']];
+		$faction['name'] = localizedName($row, 'name');
 		// Описание фракции, из клиента:
-		$faction['description1'] = $row['description1_loc'.$_SESSION['locale']];
+		$faction['description1'] = localizedName($row, 'description1');
 		// Описание фракции, c wowwiki.com, находится в таблице factions.sql:
-		$faction['description2'] = $row['description2_loc'.$_SESSION['locale']];
+		$faction['description2'] = localizedName($row, 'description2');
 		// Команда/Группа фракции
 		if($row['category2'] <> 0)
 		{
