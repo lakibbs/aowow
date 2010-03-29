@@ -507,21 +507,20 @@ function redirect($url)
 }
 function localizedName($arr, $key = 'name')
 {
-	if(!$_SESSION['locale'])
-		return $arr[$key];
+	$result = '';
 
-	if(empty($arr[$key]))
-		return '';
+	if(!empty($arr[$key]))
+		$result = $arr[$key];
 
-	$lkey = $key.'_loc';
-	if(empty($arr[$lkey]))
-	{
-		if(substr($arr[$key], 0, 1) == '[' && substr($arr[$key], -1, 1) == ']')
-			return $arr[$key];
-		else
-			return '['.$arr[$key].']';
-	}
-	else
-		return $arr[$lkey];
+	if(!empty($arr[$key.'_loc0']))
+		$result = $arr[$key.'_loc0'];
+
+	if($_SESSION['locale'] && !empty($arr[$key.'_loc']))
+		$result = $arr[$key.'_loc'];
+
+	if($_SESSION['locale'] && !empty($arr[$key.'_loc'.$_SESSION['locale']]))
+		$result = $arr[$key.'_loc'.$_SESSION['locale']];
+
+	return $result;
 }
 ?>
