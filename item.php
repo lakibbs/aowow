@@ -69,19 +69,17 @@ if(!$item = load_cache(5, $cache_key))
 			// Сундуки
 			$rows = $DB->select('
 					SELECT g.entry, g.name, g.type, a.lockproperties1 {, l.name_loc?d AS name_loc}
-					FROM ?_lock a, gameobject_template g
+					FROM gameobject_template g LEFT JOIN ?_lock a ON a.lockID=g.data0
 					{ LEFT JOIN (locales_gameobject l) ON l.entry=g.entry AND ? }
 					WHERE
 						g.data1=?d
-						AND g.type=?d
-						AND a.lockID=g.data0
+						AND g.type IN (?d, ?d)
 				',
 				($_SESSION['locale']>0)? $_SESSION['locale']: DBSIMPLE_SKIP,
 				($_SESSION['locale']>0)? 1: DBSIMPLE_SKIP,
 				$lootid,
 				GAMEOBJECT_TYPE_CHEST,
-				LOCK_PROPERTIES_HERBALISM,
-				LOCK_PROPERTIES_MINING
+				GAMEOBJECT_TYPE_FISHINGHOLE
 			);
 			foreach($rows as $row)
 			{
