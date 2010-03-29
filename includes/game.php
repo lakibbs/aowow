@@ -11,49 +11,20 @@ function factioninfo($id)
 	return $faction;
 }
 
-function add_loot(&$loot, $newloot)
-{
-	// Записываем все существующие в луте итемы в массив
-	$exist = array();
-	foreach($loot as $offset => $item)
-		$exist[$item['entry']] = $offset;
-
-	foreach($newloot as $newitem)
-	{
-		// MUST NOT HAPPEN
-		if(!is_array($newitem))
-			return;
-
-		// Если в луте есть такая вещь
-		if(isset($exist[$newitem['entry']]))
-		{
-			$loot[$exist[$item['entry']]]['mincount'] = min($loot[$exist[$item['entry']]]['mincount'], $newitem['mincount']);
-			$loot[$exist[$item['entry']]]['maxcount'] = max($loot[$exist[$item['entry']]]['maxcount'], $newitem['maxcount']);
-			$loot[$exist[$item['entry']]]['percent'] += $newitem['percent'];
-			$loot[$exist[$item['entry']]]['group'] = 0;
-		}
-		else
-			$loot[] = $newitem;
-	}
-}
-
 // Что дропает
-function loot($table, $lootid, $mod = 1)
+function loot($table, $lootid, $group = 0)
 {
-	// Все элементы
 	global $DB, $item_cols;
-	$loot = array();
-	$groups = array();
 	// Мего запрос :)
 	$rows = $DB->select('
-		SELECT l.ChanceOrQuestChance, l.mincountOrRef, l.maxcount, l.groupid, ?#, i.entry
+		SELECT l.ChanceOrQuestChance, l.mincountOrRef, l.maxcount as `d-max`, l.groupid, ?#, i.entry, i.maxcount
 			{, loc.name_loc?d AS name_loc}
 		FROM ?# l
 			LEFT JOIN (?_icons a, item_template i) ON l.item=i.entry AND a.id=i.displayid
 			{LEFT JOIN (locales_item loc) ON loc.entry=i.entry AND ?d}
 		WHERE
 			l.entry=?d
-		ORDER BY groupid ASC, ChanceOrQuestChance DESC
+			{ AND l.mincountOrRef >= 0 AND l.groupid = ?d }
 		{LIMIT ?d}
 		',
 		$item_cols[2],
@@ -61,85 +32,92 @@ function loot($table, $lootid, $mod = 1)
 		$table,
 		($_SESSION['locale'])? 1: DBSIMPLE_SKIP,
 		$lootid,
+		$group ? $group : DBSIMPLE_SKIP,
 		($AoWoWconf['limit']!=0)? $AoWoWconf['limit']: DBSIMPLE_SKIP
 	);
 
-	$last_group = 0;
-	$last_group_equal_chance = 100;
-	// Перебираем
-	foreach($rows as $row)
-	{
-		// Не группа
-		if($row['groupid'] == 0)
+	// Подсчитываем нужную информацию о группах
+	$groupchance = array();
+	$groupzero = array();
+	foreach ($rows as $row)
+		if ($row['mincountOrRef'] >= 0)
 		{
-			// Ссылка
-			if($row['mincountOrRef'] < 0)
-				add_loot($loot, loot('reference_loot_template', -$row['mincountOrRef'], abs($row['ChanceOrQuestChance']) / 100 * $row['maxcount'] * $mod));
+			$gid = $row['groupid'];
+			if (!isset($groupchance[$gid])) $groupchance[$gid] = 0;
+			if (!isset($groupzero[$gid])) $groupzero[$gid] = 0;
+			if ($row['ChanceOrQuestChance'] == 0)
+				$groupzero[$gid] ++;
 			else
-				// Обыкновенный дроп
-				add_loot($loot, array(array_merge(array(
-						'percent'  => max(abs($row['ChanceOrQuestChance']) * $mod, 0)*sign($row['ChanceOrQuestChance']),
-						'mincount' => $row['mincountOrRef'],
-						'maxcount' => $row['maxcount']
-					),
-					iteminfo2($row, 0)
-				)));
-		}
-		// Группа
+				$groupchance[$gid] += abs($row['ChanceOrQuestChance']);
+ 		}
+
+	// Присваиваем каждой группе номер от 1
+	$maxgroup = 0;
+	$groupnum = array();
+	foreach ($groupchance as $id => $group)
+		if ($id)
+			$groupnum[$id] = ++$maxgroup;
 		else
+			$groupnum[$id] = "";
+
+	// Cохраняем весь нессылочный лут
+	$loot = array();
+	foreach ($rows as $row)
+		if ($row['mincountOrRef'] >= 0)
 		{
-			$chance = abs($row['ChanceOrQuestChance']);
-			// Новая группа?
-			if($row['groupid'] <> $last_group)
+			$chance = $row['ChanceOrQuestChance'];
+			if($chance == 0) // Запись из группы с равным шансом дропа, считаем реальную вероятность
 			{
-				$last_group = $row['groupid'];
-				$last_group_equal_chance = 100;
+				$chance = (100 - $groupchance[$row['groupid']]) / $groupzero[$row['groupid']];
+				if ($chance < 0) $chance = 0;
+				if ($chance > 100) $chance = 100;
 			}
 
-			// Шанс лута задан
-			if($chance > 0)
+			$item = $row['entry'] . '.' . $row['groupid']; // Это чтобы отделить предметы в разных группах
+			if (isset($loot[$item]))
 			{
-				$last_group_equal_chance -= $chance;
-				$last_group_equal_chance = max($last_group_equal_chance, 0);
+				$loot[$item]['mincount'] = min($row['mincountOrRef'], $loot[$item]['mincount']);
+				if ($row['groupid'])
+					$loot[$item]['maxcount'] = max($loot[$item]['maxcount'], $row['d-max']);
+				else
+					$loot[$item]['maxcount'] = $loot[$item]['maxcount'] + $row['d-max'];
+				$loot[$item]['percent'] = 1 - (1-abs($chance))*(1-abs($loot[$item]['percent']));
+			}
+			else
+			{
+				$loot[$item] = iteminfo2($row, 0);
+				$loot[$item]['mincount'] = $row['mincountOrRef'];
+				$loot[$item]['maxcount'] = $row['d-max'];
+				$loot[$item]['percent'] = $chance;
+				$loot[$item]['group'] = $groupnum[$row['groupid']];
+				$loot[$item]['groupcount'] = 1;
+			}
+		}
 
-				// Ссылка
-				if($row['mincountOrRef'] < 0)
+	// И наконец, добавляем весь лут со ссылок
+	foreach ($rows as $row)
+		if ($row['mincountOrRef'] < 0)
+		{
+			$newmax = $maxgroup;
+			$tmploots = loot('reference_loot_template', -$row['mincountOrRef'], $row['groupid']);
+			foreach ($tmploots as $tmploot)
+			{
+				if ($tmploot['group'])
 				{
-					add_loot($loot, loot('reference_loot_template', -$row['mincountOrRef'], $chance / 100 * $row['maxcount'] * $mod));
+					$tmploot['group'] += $maxgroup;
+					if ($newmax < $tmploot['group']) $newmax = $tmploot['group'];
+					$tmploot['groupcount'] = $tmploot['groupcount'] * $row['d-max'];
 				}
 				else
-					add_loot($loot, array(array_merge(array(
-							'percent'  => $chance * $mod,
-							'mincount' => $row['mincountOrRef'],
-							'maxcount' => $row['maxcount'],
-						),
-						iteminfo2($row, 0)
-					)));
+				{
+					$tmploot['maxcount'] *= $row['d-max'];
+				}
+				$tmploot['percent'] *= abs($row['ChanceOrQuestChance'])/100;
+				$loot[] = $tmploot;
 			}
-			// Шанс не задан, добавляем эту группу в группы
-			else
-			{
-				$groups[$last_group][] = array_merge(array(
-						'mincount' => $row['mincountOrRef'],
-						'maxcount' => $row['maxcount'],
-						'groupchance'=>$last_group_equal_chance * $mod
-					),
-					iteminfo2($row, 0)
-				);
-			}
+			$maxgroup = $newmax;
 		}
-	}
 
-	// Перебираем и добавляем группы
-	foreach($groups as $group)
-	{
-		$num = count($group);
-		foreach($group as $item)
-		{
-			$item['percent'] = $item['groupchance'] / $num;
-			add_loot($loot, array($item));
-		}
-	}
 	return $loot;
 }
 

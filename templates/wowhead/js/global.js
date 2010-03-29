@@ -21,6 +21,8 @@
  7. Changed LiveSearch
    - relocate ?search to opensearch.php?search
  8. Added this.applySort(); in Listview prototype. May be it unneeded in some case, but i can't find such examples.
+ 9. Changed items percents handling.
+   - backported support of negative probabilities for quest items
 */
 function $(c) {
 	if (arguments.length > 1) {
@@ -4335,9 +4337,16 @@ Listview.extraCols = {
 			}
 			if (a.percent >= 1.95) {
 				return a.percent.toFixed(0)
+			} else if (a.percent < 0){
+				// Quest items have negative percents
+				return ((-1*a.percent) + ' (' + LANG.types[5][0] + ')')
 			} else {
 				return parseFloat(a.percent.toFixed(1))
 			}
+		},
+		// Correct comparison for negative percents of quest items
+		sortFunc: function (d, c, e) {
+			return strcmp(Math.abs(d.percent), Math.abs(c.percent));
 		},
 		getVisibleText: function (a) {
 			if (a.count == -1) {
@@ -4345,6 +4354,9 @@ Listview.extraCols = {
 			}
 			if (a.percent >= 1.95) {
 				return a.percent.toFixed(0)
+			} else if (a.percent < 0){
+				// Quest items have negative percents
+				return ((-1*a.percent) + ' (' + LANG.types[5][0] + ')')
 			} else {
 				return parseFloat(a.percent.toFixed(1))
 			}

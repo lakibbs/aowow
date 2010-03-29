@@ -5,6 +5,7 @@
 {assign var="classs1" value=true}
 {assign var="classs2" value=true}
 {assign var="classs4" value=true}
+{assign var="group" value=false}
 
 {foreach from=$data item=curr}
 	{if !(isset($curr.cost))}{assign var="cost" value=false}{/if}
@@ -12,6 +13,7 @@
 	{if !($curr.classs==1)}{assign var="classs1" value=false}{/if}
 	{if !($curr.classs==2)}{assign var="classs2" value=false}{/if}
 	{if !($curr.classs==4)}{assign var="classs4" value=false}{/if}
+	{if $curr.group}{assign var="group" value=true}{/if}
 {/foreach}
 
 new Listview(
@@ -21,6 +23,7 @@ new Listview(
 	{if (isset($tabsid))}tabs:{$tabsid},parent:'listview-generic',{/if}
 	extraCols:[
 		{if $percent}Listview.extraCols.percent{/if}
+		{if $group},Listview.funcBox.createSimpleCol('group', 'group', '10%', 'group'){/if}
 		{if $cost}Listview.extraCols.stock, Listview.extraCols.cost{/if}
 	],
 	{if $classs1}visibleCols:['slots'],
@@ -29,45 +32,48 @@ new Listview(
 	hiddenCols:['source'],
 	sort:[{if $percent}'-percent',{/if}'name'],
 	data:[
-	{section name=i loop=$data}
+	{foreach name=i from=$data item=item}
 		{ldelim}
 		{* Название/качество вещи, обязательно *}
-		name:'{$data[i].quality2}{$data[i].name|escape:"quotes"}',
+		name:'{$item.quality2}{$item.name|escape:"quotes"}',
 		{* Уровень вещи *}
-		{if $data[i].level}
-			level:{$data[i].level},
+		{if $item.level}
+			level:{$item.level},
 		{/if}
 		{* Требуемый уровень вещи *}
-		{if $data[i].reqlevel}
-			reqlevel:{$data[i].reqlevel},
+		{if $item.reqlevel}
+			reqlevel:{$item.reqlevel},
 		{/if}
 		{* Класс вещи, обязательно *}
-			classs:{$data[i].classs},
+			classs:{$item.classs},
 		{* Подкласс вещи, обязательно *}
-			subclass:{$data[i].subclass},
+			subclass:{$item.subclass},
 		{* Кол-во вещей при дропе *}
-		{if isset($data[i].maxcount)}
-			{if $data[i].maxcount>1}
-				stack:[{$data[i].mincount},{$data[i].maxcount}],
+		{if isset($item.maxcount)}
+			{if $item.maxcount>1}
+				stack:[{$item.mincount},{$item.maxcount}],
 			{/if}
 		{/if}
 		{* Процент дропа *}
 		{if $percent}
-			percent:{$data[i].percent},
+			percent:{$item.percent},
+		{/if}
+		{if $item.group and isset($item.groupcount)}
+			group:'({$item.group}){if $item.groupcount!=1} x{$item.groupcount}{/if}',
 		{/if}
 		{* Стоимость *}
 		{if $cost}
 			{* Макс. кол-во на продажу *}
 			stock:-1,
 			cost:[
-				{if isset($data[i].cost.money)}{$data[i].cost.money}{/if}
-				{if isset($data[i].cost.honor) or isset($data[i].cost.arena) or isset($data[i].cost.items)}
-					,{if isset($data[i].cost.honor)}{$data[i].cost.honor}{/if}
-					{if isset($data[i].cost.arena) or isset($data[i].cost.items)}
-						,{if isset($data[i].cost.arena)}{$data[i].cost.arena}{/if}
-						{if isset($data[i].cost.items)}
+				{if isset($item.cost.money)}{$item.cost.money}{/if}
+				{if isset($item.cost.honor) or isset($item.cost.arena) or isset($item.cost.items)}
+					,{if isset($item.cost.honor)}{$item.cost.honor}{/if}
+					{if isset($item.cost.arena) or isset($item.cost.items)}
+						,{if isset($item.cost.arena)}{$item.cost.arena}{/if}
+						{if isset($item.cost.items)}
 							,[
-							{foreach from=$data[i].cost.items item=curitem name=c}
+							{foreach from=$item.cost.items item=curitem name=c}
 								[{$curitem.item},{$curitem.count}]
 								{if $smarty.foreach.c.last}{else},{/if}
 							{/foreach}
@@ -78,20 +84,20 @@ new Listview(
 				],
 		{/if}
 		{if $classs1==1}
-			nslots:{$data[i].slots},
+			nslots:{$item.slots},
 		{/if}
 		{if $classs2}
-			dps:{$data[i].dps},
-			speed:{$data[i].speed},
+			dps:{$item.dps},
+			speed:{$item.speed},
 		{/if}
 		{if $classs4}
-			armor:{$data[i].armor},
-			slot:{$data[i].slot},
+			armor:{$item.armor},
+			slot:{$item.slot},
 		{/if}
 		{* Номер вещи, обязателен *}
-		id:{$data[i].entry}
-		{rdelim}{if $smarty.section.i.last}{else},{/if}
-	{/section}
+		id:{$item.entry}
+		{rdelim}{if $smarty.foreach.i.last}{else},{/if}
+	{/foreach}
 	]{rdelim}
 );
 {/strip}
