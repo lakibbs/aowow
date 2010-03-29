@@ -10,3 +10,7 @@ commi*
 
 # config file
 configs/config.php
+
+# my
+.staff
+templates/wowhead/images/__logo.png

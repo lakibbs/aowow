@@ -6,39 +6,7 @@ $smarty->config_load($conf_file, 'account');
 // Создание аккаунта
 if($_REQUEST['account'] == 'signup' && isset($_POST['username']) && isset($_POST['password']) && isset($_POST['c_password']) && $AoWoWconf['register'] == true)
 {
-	// Совпадают ли введенные пароли?
-	if($_POST['password'] != $_POST['c_password'])
-	{
-		$smarty->assign('signup_error', $smarty->get_config_vars('Different_passwords'));
-	}
-	else
-	{
-		// Существует ли уже такой пользователь?
-		if($rDB->selectCell('SELECT Count(id) FROM account WHERE username=? LIMIT 1', $_POST['username']) == 1)
-		{
-			$smarty->assign('signup_error', $smarty->get_config_vars('Such_user_exists'));
-		}
-		else
-		{
-			// Вроде все нормально, создаем аккаунт
-			$success = $rDB->selectCell('
-					INSERT INTO account (username, sha_pass_hash, email, joindate, expansion, last_ip)
-					VALUES (?, ?, ?, NOW(), ?, ?)
-				',
-				$_POST['username'],
-				create_usersend_pass($_POST['username'], $_POST['password']),
-				(isset($_POST['email']))? $_POST['email'] : '',
-				$AoWoWconf['expansion'],
-				(isset($_SERVER["REMOTE_ADDR"]))? $_SERVER["REMOTE_ADDR"] : ''
-			);
-			if($success > 0)
-				// Все отлично, авторизуем
-				$_REQUEST['account']='signin';
-			else
-				// Неизвестная ошибка
-				$smarty->assign('signup_error', $smarty->get_config_vars('Unknow_error_on_account_create'));
-		}
-	}
+	$smarty->assign('signup_error', "Регистрация производится на сайте http://wowacadem.ru/start.");
 }
 
 if($_REQUEST['account'] == 'signin' && isset($_POST['username']) && isset($_POST['password']))
@@ -92,7 +60,7 @@ switch($_REQUEST['account'])
 	case 'signup_false':
 	case 'signup':
 		// Регистрация аккаунта
-		$smarty->display('signup.tpl');
+		header('Location: http://wowacadem.ru/start/');
 		break;
 	case 'signout':
 		// Выход из пользователя

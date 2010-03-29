@@ -1559,7 +1559,7 @@ function co_addYourComment() {
 	a.focus()
 }
 function co_cancelReply() {
-	ge("gjkdlfgkjh436").style.display = "none";
+	ge("replybox-generic").style.display = "none";
 	document.forms.addcomment.elements.replyto.value = ""
 }
 function co_validateForm(b) {
@@ -5087,7 +5087,7 @@ Listview.funcBox = {
 	},
 	coReply: function (b) {
 		document.forms.addcomment.elements.replyto.value = b.replyTo;
-		var a = ge("gjkdlfgkjh436");
+		var a = ge("replybox-generic");
 		gE(a, "span")[0].innerHTML = b.user;
 		a.style.display = "";
 		co_addYourComment()
