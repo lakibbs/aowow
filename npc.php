@@ -71,10 +71,10 @@ if(!$npc = load_cache(1, $cache_key))
 		$money = ($row['mingold']+$row['maxgold']) / 2;
 		$npc = array_merge($npc, money2coins($money));
 		// Героик/нормал копия НПС
-		if($npc['heroic_entry'])
+		if($npc['difficulty_entry_1'])
 		{
 			// это нормал НПС, ищем героика
-			if($tmp = creatureinfo($npc['heroic_entry']))
+			if($tmp = creatureinfo($npc['difficulty_entry_1']))
 			{
 				$npc['heroic'] = array(
 					'type'	=> 0,
@@ -100,7 +100,7 @@ if(!$npc = load_cache(1, $cache_key))
 						ON l.entry = c.entry AND ?
 					}
 					WHERE
-						c.heroic_entry = ?d
+						c.difficulty_entry_1 = ?d
 					LIMIT 1
 				',
 				($_SESSION['locale']>0)? $_SESSION['locale']: DBSIMPLE_SKIP,
