@@ -177,7 +177,7 @@ function drop($table, $item)
 				$subrows = $DB->select('
 						SELECT ChanceOrQuestChance, mincountOrRef, maxcount
 						FROM ?#
-						WHERE entry = ? AND groupid = ?
+						WHERE entry = ? AND groupid = ? AND mincountOrRef >= 0
 					',
 					$curtable,
 					$row['entry'],
@@ -208,7 +208,11 @@ function drop($table, $item)
 
 			// Сохраняем подсчитанные для этих групп вероятности
 			//(референсные записи хранятся с отрицательными номерами)
-			$num = ($curtable <> $table) ? -$row['entry'] : $row['entry'];
+			$nums = array();
+			$nums[0] = ($curtable <> $table) ? -$row['entry'] : $row['entry'];
+			if ($curtable <> $table && $row['groupid'])
+				$nums[1] = $nums[0] . "." . $row['groupid'];
+			foreach ($nums as $num)
 			if(isset($drop[$num]))
 			{
 				// Этот же элемент уже падал в другой подгруппе - считаем общую вероятность.
@@ -236,7 +240,7 @@ function drop($table, $item)
 		$num = 0;
 		foreach($drop as $i => $value)
 		{
-			if($i < 0 && !$value['checked'])
+			if($i < 0 && strpos($i,'.')===FALSE && !$value['checked'])
 			{
 				$num = $i;
 				break;
